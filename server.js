@@ -1129,11 +1129,12 @@ async function evaluateDesignerBlocks() {
 
 }
 
-cron.schedule("0 0 * * *", async () => {
+cron.schedule("* * * * *", async () => {
+  console.log("🔥 Marketing cron triggered");
   console.log("⏰ Running midnight jobs");
 
   try {
-    await updateDelayCounters();
+    
     await evaluateDesignerBlocks();
     await runMarketingTaskGenerator();
 
