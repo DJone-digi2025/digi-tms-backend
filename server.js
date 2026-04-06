@@ -1550,38 +1550,44 @@ app.get("/tasks/designer/active", async (req, res) => {
 
     let data, error;
 
+    const today = new Date().toISOString().split("T")[0];
+
     // ✅ DESIGNER
     if (user_role === "designer") {
       const response = await supabase
         .from("tasks")
         .select("*")
         .eq("team_member_id", user_id)
-        .in("status", ["ASSIGNED", "SUBMITTED", "REWORK"])
-        .lte("assign_date", today); 
+        .in("status", ["ASSIGNED", "SUBMITTED", "REWORK"]);
 
       data = response.data;
       error = response.error;
+
+      if (error) throw error;
+
+      // 🔥 SAFE FILTER
+      data = data.filter(task => {
+        if (!task.assign_date) return true;
+        return task.assign_date <= today;
+      });
     }
 
-// ✅ MARKETING (Aathi)
-else if (user_role === "marketing") {
-let data = response.data;
+    // ✅ MARKETING
+    else if (user_role === "marketing") {
+      const response = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("team_member_id", user_id)
+        .eq("task_category", "marketing")
+        .in("status", ["ASSIGNED", "SUBMITTED", "REWORK"]);
 
-data = data.filter(task => {
-  // show if no assign_date (fallback)
-  if (!task.assign_date) return true;
+      data = response.data;
+      error = response.error;
 
-  return task.assign_date <= today;
-});
+      if (error) throw error;
 
-  data = response.data;
-  error = response.error;
-
-  if (error) throw error;
-
-  // 🔥 Filter: only today + past incomplete
-  data = data.filter(task => task.assign_date <= today);
-}
+      data = data.filter(task => task.assign_date <= today);
+    }
 
     // ✅ STRATEGIST
     else if (user_role === "strategist") {
@@ -1596,26 +1602,22 @@ data = data.filter(task => {
       if (error) throw error;
 
       data = data.filter(task => {
+        if (task.assign_date && task.assign_date > today) return false;
+
         const status = (task.status || "").toUpperCase();
 
-        // ✅ 1. Manual strategist tasks
         if (task.team_member_id == null) return true;
-
-        // ✅ 2. Ready to publish (after manager approval)
         if (task.ready_for_publish === true) return true;
-
-        // ✅ 3. Already published, waiting manager approval
         if (task.stage === "publish" && status === "SUBMITTED") return true;
 
         return false;
       });
     }
 
-    if (error) throw error;
-
     res.json(data);
 
   } catch (err) {
+    console.error("DESIGNER ACTIVE ERROR:", err);
     res.status(500).json({ error: err.message });
   }
 });
