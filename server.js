@@ -1601,28 +1601,35 @@ app.get("/tasks/designer/active", async (req, res) => {
 
       if (error) throw error;
 
-      data = data.filter(task => {
-        if (task.assign_date && task.assign_date > today) return false;
+data = data.filter(task => {
+  if (task.assign_date && task.assign_date > today) return false;
 
-        const status = (task.status || "").toUpperCase();
+  const status = (task.status || "").toUpperCase();
 
-        // ✅ 1. Manual tasks assigned to strategist (🔥 MAIN FIX)
-        if (task.is_manual === true && task.strategist_id === user_id) {
-          return true;
-        }
+  // ❌ NEVER show cancelled
+  if (status === "CANCELLED") return false;
 
-        // ✅ 2. Auto tasks that reached strategist (publish stage)
-        if (task.stage === "publish") {
-          return true;
-        }
+  // ✅ workflow tasks (highest priority)
+  if (task.ready_for_publish === true) return true;
 
-        // ✅ 3. Ready to publish
-        if (task.ready_for_publish === true) {
-          return true;
-        }
+  if (task.stage === "publish") return true;
 
-        return false;
-      });
+  // ❌ block designer manual tasks BEFORE approval
+  if (
+    task.is_manual === true &&
+    task.team_member_id !== null &&
+    task.ready_for_publish !== true
+  ) {
+    return false;
+  }
+
+  // ✅ manual tasks assigned directly to strategist
+  if (task.is_manual === true && task.strategist_id === user_id) {
+    return true;
+  }
+
+  return false;
+});
     }
 
     res.json(data);
