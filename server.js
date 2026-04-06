@@ -1606,9 +1606,20 @@ app.get("/tasks/designer/active", async (req, res) => {
 
         const status = (task.status || "").toUpperCase();
 
-        if (task.team_member_id == null) return true;
-        if (task.ready_for_publish === true) return true;
-        if (task.stage === "publish" && status === "SUBMITTED") return true;
+        // ✅ 1. Manual tasks assigned to strategist (🔥 MAIN FIX)
+        if (task.is_manual === true && task.strategist_id === user_id) {
+          return true;
+        }
+
+        // ✅ 2. Auto tasks that reached strategist (publish stage)
+        if (task.stage === "publish") {
+          return true;
+        }
+
+        // ✅ 3. Ready to publish
+        if (task.ready_for_publish === true) {
+          return true;
+        }
 
         return false;
       });
