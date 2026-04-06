@@ -1556,7 +1556,8 @@ app.get("/tasks/designer/active", async (req, res) => {
         .from("tasks")
         .select("*")
         .eq("team_member_id", user_id)
-        .in("status", ["ASSIGNED", "SUBMITTED", "REWORK"]);
+        .in("status", ["ASSIGNED", "SUBMITTED", "REWORK"])
+        .lte("assign_date", today); 
 
       data = response.data;
       error = response.error;
