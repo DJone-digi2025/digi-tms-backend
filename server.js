@@ -1565,14 +1565,14 @@ app.get("/tasks/designer/active", async (req, res) => {
 
 // ✅ MARKETING (Aathi)
 else if (user_role === "marketing") {
-  const today = new Date().toISOString().split("T")[0];
+let data = response.data;
 
-  const response = await supabase
-    .from("tasks")
-    .select("*")
-    .eq("team_member_id", user_id)
-    .eq("task_category", "marketing")
-    .in("status", ["ASSIGNED", "SUBMITTED", "REWORK"]);
+data = data.filter(task => {
+  // show if no assign_date (fallback)
+  if (!task.assign_date) return true;
+
+  return task.assign_date <= today;
+});
 
   data = response.data;
   error = response.error;
