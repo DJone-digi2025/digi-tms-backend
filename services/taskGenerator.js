@@ -4,7 +4,7 @@ const bufferRules = {
   reel: { design: 3, publish: 1 },
   post: { design: 3, publish: 1 },
   carousel: { design: 3, publish: 1 },
-  bdaypost: { design: 2, publish: 1}
+  bday: { design: 2, publish: 1}
 }
 
 // get all clients
@@ -171,7 +171,7 @@ console.log("FOUND STRATEGIST ID:", strategistMember?.id);
   if (type === "reel") rule = client.reel_designers
   if (type === "post") rule = client.post_designers
   if (type === "carousel") rule = client.carousel_designers
-  if (type === "bday") rule = client.bdaypost_designers
+  if (type === "bday") rule = client.bday_designers
 
   const eligible = getEligibleDesigners(rule, type, teamMembers)
 
