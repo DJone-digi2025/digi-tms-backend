@@ -89,19 +89,13 @@ app.get("/system-data", async (req, res) => {
 })
 
 app.get("/billing", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("billing")
-      .select("*")
-      .order("id", { ascending: false });
-
-    if (error) throw error;
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const { data } = await supabase
+    .from("billing")
+    .select("*")
+    .order("id", { ascending: false });
 });
+
+
 
 app.get("/meetings", async (req, res) => {
   try {
@@ -588,38 +582,18 @@ app.post("/create-bill", async (req, res) => {
       content_type,
       content_description,
       content_count,
-      amount_credited
+      amount_credited,
+      user_id,
+      user_name,
+      role
     } = req.body;
 
-    // 🔹 1. Get client contract amount
-    const { data: client } = await supabase
-      .from("clients")
-      .select("total_contract_amount")
-      .eq("client_name", client_name)
-      .single();
-
-    if (!client) {
-      return res.status(400).json({ error: "Client not found" });
+    // ✅ basic validation
+    if (!client_name || !content_type || !amount_credited) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const contract_total = Number(client.total_contract_amount);
-
-    // 🔹 2. Get previous total credited
-    const { data: previousBills } = await supabase
-      .from("billing")
-      .select("amount_credited")
-      .eq("client_name", client_name);
-
-    const previousTotal = previousBills.reduce(
-      (sum, b) => sum + Number(b.amount_credited || 0),
-      0
-    );
-
-    // 🔹 3. Calculate new totals
-    const new_total_received = previousTotal + Number(amount_credited);
-    const pending_amount = contract_total - new_total_received;
-
-    // 🔹 4. Insert entry (NO price logic)
+    // ✅ insert simple log entry (NO calculations)
     const { data, error } = await supabase
       .from("billing")
       .insert([
@@ -630,31 +604,33 @@ app.post("/create-bill", async (req, res) => {
           content_count,
           amount_credited: Number(amount_credited),
 
-          total_amount: contract_total,       // constant reference
-          total_received: new_total_received, // running total
-          pending_amount
+          // 🔥 IMPORTANT
+          user_id,
+          user_name,
+          role,
+          logged_by: `${user_name} (${role})`
         }
       ])
       .select();
 
     if (error) throw error;
 
-    // 🔥 LOG ENTRY
-await supabase.from("activity_logs").insert([
-  {
-    user_id: req.body.user_id || null,
-    user_name: req.body.user_name || "unknown",
-    role: req.body.role || "unknown",
+    // ✅ activity log (keep this, it's good)
+    await supabase.from("activity_logs").insert([
+      {
+        user_id: user_id || null,
+        user_name: user_name || "unknown",
+        role: role || "unknown",
 
-    action: "BILL_CREATED",
-    module: "billing",
+        action: "BILL_CREATED",
+        module: "billing",
 
-    details: {
-      client: client_name,
-      amount: amount_credited
-    }
-  }
-]);
+        details: {
+          client: client_name,
+          amount: amount_credited
+        }
+      }
+    ]);
 
     res.json({ message: "Bill created", data });
 
@@ -664,62 +640,6 @@ await supabase.from("activity_logs").insert([
   }
 });
 
-app.post("/update-payment", async (req, res) => {
-  try {
-    const { bill_id, amount_paid } = req.body;
-
-    // get existing bill
-    const { data: bill } = await supabase
-      .from("billing")
-      .select("*")
-      .eq("id", bill_id)
-      .single();
-
-    if (!bill) {
-      return res.status(404).json({ error: "Bill not found" });
-    }
-
-// 🔹 get client contract
-const { data: client } = await supabase
-  .from("clients")
-  .select("total_contract_amount")
-  .eq("client_name", bill.client_name)
-  .single();
-
-const contract_total = Number(client.total_contract_amount);
-
-// 🔹 get all previous credits
-const { data: allBills } = await supabase
-  .from("billing")
-  .select("amount_credited")
-  .eq("client_name", bill.client_name);
-
-const previousTotal = allBills.reduce(
-  (sum, b) => sum + Number(b.amount_credited || 0),
-  0
-);
-
-// 🔹 new totals
-const new_total_received = previousTotal + Number(amount_paid);
-const new_pending = contract_total - new_total_received;
-
-    const { data, error } = await supabase
-      .from("billing")
-      .update({
-        amount_credited: Number(amount_paid),
-        pending_amount: new_pending
-      })
-      .eq("id", bill_id)
-      .select();
-
-    if (error) throw error;
-
-    res.json({ message: "Payment updated", data });
-
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 app.post("/create-meeting", async (req, res) => {
   try {
