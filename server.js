@@ -321,17 +321,25 @@ app.post("/create-manual-task", async (req, res) => {
     }
 
     // 🔥 get strategist from client (for designer tasks)
-    const { data: clientData } = await supabase
-      .from("clients")
-      .select("strategist")
-      .eq("client_name", client_name)
-      .single();
+let strategistMember = null;
 
-    const { data: strategistMember } = await supabase
-      .from("team_members")
-      .select("id")
-      .eq("name", clientData?.strategist)
-      .single();
+const { data: clientData } = await supabase
+  .from("clients")
+  .select("strategist")
+  .eq("client_name", client_name)
+  .maybeSingle(); // 🔥 IMPORTANT (no error if not found)
+
+if (clientData?.strategist) {
+  const { data } = await supabase
+    .from("team_members")
+    .select("id")
+    .eq("name", clientData.strategist)
+    .single();
+
+  strategistMember = data;
+}
+
+
 
     // ✅ 🔥 CORE FIX — ROLE BASED ASSIGNMENT
     let team_member_id = null;
