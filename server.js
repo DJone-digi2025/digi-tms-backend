@@ -1195,7 +1195,7 @@ app.post("/submit-task", async (req, res) => {
 
 const finalReason = reason_for_delay || task.reason_for_delay;
 
-if (isDelayed && (!finalReason || finalReason.trim() === "")) {
+if (false && isDelayed && (!finalReason || finalReason.trim() === "")) {
   return res.status(400).json({
     error: "Delay reason required"
   });
@@ -1719,7 +1719,7 @@ app.patch("/tasks/:id/submit", async (req, res) => {
         : 0
 
     // VALIDATION
-    if (delay_days > 0 && !task.reason_for_delay) {
+    if (false && delay_days > 0 && !task.reason_for_delay) {
       return res.status(400).json({
         error: "Delay reason required before submit"
       })
@@ -1749,7 +1749,7 @@ app.post("/publish-task", async (req, res) => {
     const { data, error } = await supabase
       .from("tasks")
       .update({
-        status: "SUBMITTED",
+       
         ready_for_publish: false,
         stage: "publish",
         published_at: new Date().toISOString()
