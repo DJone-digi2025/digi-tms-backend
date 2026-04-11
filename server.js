@@ -1668,6 +1668,29 @@ app.get("/tasks/all", async (req, res) => {
   }
 });
 
+app.patch("/remove-plan/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({
+        plan_link: null,
+        plan_file: null,
+        description: null,
+        status: "REMOVED"
+      })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    res.json({ message: "Plan removed" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.patch("/tasks/:id/save-reason", async (req, res) => {
   try {
     const { id } = req.params;
