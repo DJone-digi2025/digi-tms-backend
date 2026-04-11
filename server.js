@@ -423,7 +423,8 @@ app.post("/create-marketing-task", async (req, res) => {
       content_type,
       publish_date,
       assigned_to, // Aathi
-      priority
+      priority,
+      requires_plan
     } = req.body;
 
     const type = content_type?.toLowerCase().trim();
@@ -489,7 +490,8 @@ app.post("/create-marketing-task", async (req, res) => {
       priority: normalizedPriority,
       status: "ASSIGNED",
       is_manual: true,
-      task_code
+      task_code,
+      requires_plan: requires_plan ?? true
     };
 
     const { data, error } = await supabase
