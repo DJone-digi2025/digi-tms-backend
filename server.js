@@ -1678,7 +1678,7 @@ app.patch("/remove-plan/:id", async (req, res) => {
         plan_link: null,
         plan_file: null,
         description: null,
-        status: "REMOVED"
+        plan_removed: true
       })
       .eq("id", id);
 
