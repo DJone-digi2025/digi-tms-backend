@@ -277,6 +277,24 @@ app.post("/upload-output", uploadMemory.single("file"), async (req, res) => {
   }
 });
 
+app.post("/save-output", async (req, res) => {
+  try {
+    const { task_id, output_file } = req.body;
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({ output_file })
+      .eq("id", task_id);
+
+    if (error) throw error;
+
+    res.json({ message: "Saved" });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 app.post("/generate-marketing-tasks", async (req, res) => {
   try {
