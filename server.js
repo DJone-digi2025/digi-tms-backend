@@ -6,6 +6,7 @@ import multer from "multer"
 import csv from "csv-parser"
 import fs from "fs"
 import cron from "node-cron"
+import AWS from "aws-sdk"
 
 import { generateTasksFromRow, getClients, getTeamMembers } from "./services/taskGenerator.js"
 
@@ -31,6 +32,8 @@ app.use(express.json())
 app.get("/", (req, res) => {
   res.send("Digi TMS Backend Running")
 })
+
+const uploadMemory = multer({ storage: multer.memoryStorage() });
 
 // test database connection
 app.get("/test-db", async (req, res) => {
@@ -235,6 +238,35 @@ app.post("/upload-plan", upload.single("file"), async (req, res) => {
       }
 
     });
+});
+
+app.post("/upload-output", uploadMemory.single("file"), async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const fileName = `${Date.now()}-${file.originalname}`;
+
+    const params = {
+      Bucket: process.env.R2_BUCKET,
+      Key: fileName,
+      Body: file.buffer,
+      ContentType: file.mimetype
+    };
+
+    await s3.upload(params).promise();
+
+    const fileUrl = `${process.env.R2_PUBLIC_URL}/${fileName}`;
+
+    res.json({ url: fileUrl });
+
+  } catch (err) {
+    console.error("UPLOAD ERROR:", err);
+    res.status(500).json({ error: "Upload failed" });
+  }
 });
 
 
