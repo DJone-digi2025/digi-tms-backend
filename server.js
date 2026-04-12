@@ -15,6 +15,14 @@ import { runMarketingTaskGenerator } from "./services/marketingTaskGenerator.js"
 
 dotenv.config()
 
+
+const s3 = new AWS.S3({
+  endpoint: process.env.R2_ENDPOINT,
+  accessKeyId: process.env.R2_ACCESS_KEY,
+  secretAccessKey: process.env.R2_SECRET_KEY,
+  signatureVersion: "v4"
+});
+
 const app = express()
 
 if (!fs.existsSync("uploads")) {
