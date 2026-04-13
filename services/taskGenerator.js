@@ -24,13 +24,15 @@ export async function getClients() {
 export async function getTeamMembers() {
   const { data, error } = await supabase
     .from("team_members")
-    .select("*")
+    .select("*");
 
   if (error) {
-    throw new Error(error.message)
+    throw new Error(error.message);
   }
 
-  return data
+  console.log("TEAM MEMBERS FROM DB:", data);  // ✅ CORRECT
+
+  return data;
 }
 
 // find eligible designers based on rule

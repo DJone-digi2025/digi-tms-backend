@@ -204,6 +204,8 @@ app.post("/upload-plan", upload.single("file"), async (req, res) => {
         const clients = await getClients();
         const teamMembers = await getTeamMembers();
 
+        console.log("TEAM MEMBERS SENT TO GENERATOR:", teamMembers);
+
         for (const row of results) {
 
           // 🔥 VALIDATION
