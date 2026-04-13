@@ -1214,6 +1214,7 @@ app.get("/tasks/manager", async (req, res) => {
       return (
         task.status === "ASSIGNED" ||
         task.status === "SUBMITTED" ||
+        task.status === "REWORK" ||
         (task.stage === "publish" && task.ready_for_publish === true) ||
         (task.stage === "publish" && task.status === "SUBMITTED")
       );
