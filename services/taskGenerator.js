@@ -61,7 +61,7 @@ const activeMembers = teamMembers.filter(m => {
     return activeMembers.filter(member =>
       member.role?.toLowerCase() === "designer" &&
       member.skill &&
-      member.skill.includes(contentType)
+      member.skill?.toLowerCase().includes(contentType)
     )
   }
 
@@ -69,7 +69,7 @@ const activeMembers = teamMembers.filter(m => {
   const names = rule.split(",").map(n => n.trim().toLowerCase())
 
   return activeMembers.filter(member =>
-    names.includes(member.name.toLowerCase())
+    names.includes(member.name.trim().toLowerCase())
   )
 }
 
