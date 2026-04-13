@@ -114,7 +114,7 @@ app.get("/meetings", async (req, res) => {
       .from("meetings")
       .select(`
   *,
-  creator:users!meetings_created_by_fkey ( name, role )
+  creator:team_members!meetings_created_by_fkey ( name, role )
 `)
       .neq("status", "cancelled")
       .order("meeting_date", { ascending: true });
@@ -722,7 +722,7 @@ app.post("/create-meeting", async (req, res) => {
       ])
       .select(`
   *,
-  creator:users!meetings_created_by_fkey ( name, role )
+  creator:team_members!meetings_created_by_fkey ( name, role )
 `);
 
     if (error) throw error;
