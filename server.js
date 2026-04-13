@@ -112,7 +112,10 @@ app.get("/meetings", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("meetings")
-      .select("*")
+      .select(`
+  *,
+  creator:users!meetings_created_by_fkey ( name, role )
+`)
       .neq("status", "cancelled")
       .order("meeting_date", { ascending: true });
 
