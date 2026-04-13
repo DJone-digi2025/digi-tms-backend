@@ -644,58 +644,35 @@ app.post("/create-bill", async (req, res) => {
   try {
     const {
       client_name,
+      bill_type,
       content_type,
       content_description,
       content_count,
       amount_credited,
-      user_id,
-      user_name,
-      role
+      user_id
     } = req.body;
 
-    // ✅ basic validation
-    if (!client_name || !content_type || !amount_credited) {
+    // ✅ VALIDATION
+    if (!client_name || !bill_type || !content_type || amount_credited === undefined) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ insert simple log entry (NO calculations)
     const { data, error } = await supabase
       .from("billing")
       .insert([
         {
           client_name,
+          bill_type,
           content_type,
-          content_description,
-          content_count: content_count ? Number(content_count) : null,
+          content_description: content_description || null,
+          content_count: content_count ? Number(content_count) : 0,
           amount_credited: Number(amount_credited),
-
-          // 🔥 IMPORTANT
-          user_id,
-          user_name,
-          role,
-          logged_by: `${user_name} (${role})`
+          created_by: user_id || null
         }
       ])
       .select();
 
     if (error) throw error;
-
-    // ✅ activity log (keep this, it's good)
-    await supabase.from("activity_logs").insert([
-      {
-        user_id: user_id || null,
-        user_name: user_name || "unknown",
-        role: role || "unknown",
-
-        action: "BILL_CREATED",
-        module: "billing",
-
-        details: {
-          client: client_name,
-          amount: amount_credited
-        }
-      }
-    ]);
 
     res.json({ message: "Bill created", data });
 
@@ -704,7 +681,6 @@ app.post("/create-bill", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 app.post("/create-meeting", async (req, res) => {
   try {
