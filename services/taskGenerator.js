@@ -68,11 +68,12 @@ const activeMembers = teamMembers.filter(m => {
   }
 
   // specific designers
-  const names = rule.split(",").map(n => n.trim().toLowerCase())
+const names = rule.split(",").map(n => n.trim().toLowerCase())
 
-  return activeMembers.filter(member =>
-    names.includes(member.name.trim().toLowerCase())
-  )
+return teamMembers.filter(member =>
+  member.role?.toLowerCase() === "designer" &&
+  names.includes(member.name?.trim().toLowerCase())
+)
 }
 
 // choose designer with lowest workload for the publish date
