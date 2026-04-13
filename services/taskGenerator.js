@@ -59,7 +59,7 @@ const activeMembers = teamMembers.filter(m => {
   // auto assign based on skill
   if (rule.toLowerCase() === "auto") {
     return activeMembers.filter(member =>
-      member.role === "designer" &&
+      member.role?.toLowerCase() === "designer" &&
       member.skill &&
       member.skill.includes(contentType)
     )
