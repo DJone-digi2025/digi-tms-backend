@@ -666,7 +666,7 @@ app.post("/create-bill", async (req, res) => {
           client_name,
           content_type,
           content_description,
-          content_count,
+          content_count: content_count ? Number(content_count) : null,
           amount_credited: Number(amount_credited),
 
           // 🔥 IMPORTANT
