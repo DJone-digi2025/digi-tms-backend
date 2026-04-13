@@ -717,7 +717,10 @@ app.post("/create-meeting", async (req, res) => {
           created_by: created_by
         }
       ])
-      .select();
+      .select(`
+  *,
+  creator:users!meetings_created_by_fkey ( name )
+`);
 
     if (error) throw error;
 
