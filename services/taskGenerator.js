@@ -133,7 +133,15 @@ export async function generateTasksFromRow(row, clients, teamMembers) {
 
   const publishDate = new Date(publish_date)
 
-  const type = content_type.toLowerCase().trim()
+  console.log("RAW content_type:", content_type);
+
+const type = content_type
+  ?.toLowerCase()
+  .replace(/\r/g, "")
+  .replace(/\n/g, "")
+  .trim();
+
+console.log("PROCESSED type:", type);
   const designBuffer = bufferRules[type]?.design
 
   if (!designBuffer) {
@@ -173,12 +181,21 @@ console.log("FOUND STRATEGIST ID:", strategistMember?.id);
   if (type === "carousel") rule = client.carousel_designers
   if (type === "bday") rule = client.bday_designers
 
+  console.log("RULE SELECTED:", rule);
+
   const eligible = getEligibleDesigners(rule, type, teamMembers)
 
-  if (eligible.length === 0) {
-    console.log("Skipping task (NONE rule)")
-    return
-  }
+if (eligible.length === 0) {
+  console.log("Skipping task → eligible empty");
+  console.log("Type:", type);
+  console.log("Rule:", rule);
+  console.log("Team Members:", teamMembers.map(m => ({
+    name: m.name,
+    role: m.role,
+    skill: m.skill
+  })));
+  return;
+}
 
   for (let i = 1; i <= count; i++) {
 
