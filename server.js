@@ -100,10 +100,16 @@ app.get("/system-data", async (req, res) => {
 })
 
 app.get("/billing", async (req, res) => {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("billing")
     .select("*")
     .order("id", { ascending: false });
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json(data); // 🔥 THIS WAS MISSING
 });
 
 
