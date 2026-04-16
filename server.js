@@ -100,16 +100,67 @@ app.get("/system-data", async (req, res) => {
 })
 
 app.get("/billing", async (req, res) => {
-  const { data, error } = await supabase
-    .from("billing")
-    .select("*")
-    .order("id", { ascending: false });
+  try {
+    // 🔥 get billing data
+    const { data: bills, error: billError } = await supabase
+      .from("billing")
+      .select("*");
 
-  if (error) {
-    return res.status(500).json({ error: error.message });
+    if (billError) {
+      return res.status(500).json({ error: billError.message });
+    }
+
+    // 🔥 get clients (for contract)
+    const { data: clients, error: clientError } = await supabase
+      .from("clients")
+      .select("client_name, total_contract_amount");
+
+    if (clientError) {
+      return res.status(500).json({ error: clientError.message });
+    }
+
+    // 🔥 map client → contract
+    const contractMap = {};
+    clients.forEach((c) => {
+      contractMap[c.client_name] = c.total_contract_amount || 0;
+    });
+
+    // 🔥 total credited per client
+    const totals = {};
+    bills.forEach((b) => {
+      const client = b.client_name;
+
+      if (!totals[client]) totals[client] = 0;
+      totals[client] += b.amount_credited || 0;
+    });
+
+    // 🔥 attach status
+    const result = bills.map((b) => {
+      const client = b.client_name;
+
+      const total = totals[client] || 0;
+      const contract = contractMap[client] || 0;
+
+      let status = "pending";
+
+      if (total === 0) status = "pending";
+      else if (total < contract) status = "partial";
+      else if (total === contract) status = "paid";
+      else if (total > contract) status = "excess";
+
+      return {
+        ...b,
+        total_credited: total,
+        contract,
+        status,
+      };
+    });
+
+    res.json(result);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  res.json(data); // 🔥 THIS WAS MISSING
 });
 
 
