@@ -1175,7 +1175,9 @@ cron.schedule("0 0 * * *", async () => {
   try {
     // 🔥 SKIP ON SUNDAY / HOLIDAY
 const today = new Date();
-const todayStr = today.toISOString().split("T")[0];
+const todayStr = new Date().toLocaleDateString("en-CA", {
+  timeZone: "Asia/Kolkata"
+});
 
 const isSunday = today.getDay() === 0;
 
