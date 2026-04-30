@@ -7,6 +7,25 @@ const bufferRules = {
   bday: { design: 2, publish: 1}
 }
 
+function getPreviousWorkingDay(dateStr, holidays) {
+  let d = new Date(dateStr);
+
+  while (true) {
+    const day = d.getDay();
+    const formatted = d.toISOString().split("T")[0];
+
+    const isSunday = day === 0;
+
+    const isHoliday = holidays.some(h => h.date === formatted);
+
+    if (!isSunday && !isHoliday) {
+      return formatted;
+    }
+
+    d.setDate(d.getDate() - 1);
+  }
+}
+
 // get all clients
 export async function getClients() {
   const { data, error } = await supabase
@@ -136,6 +155,17 @@ export async function generateTasksFromRow(row, clients, teamMembers) {
 
   const publishDate = new Date(publish_date)
 
+// 🔥 FETCH HOLIDAYS (once per row)
+const { data: holidaysData, error: holidayError } = await supabase
+  .from("holidays")
+  .select("date");
+
+if (holidayError) {
+  console.error("Holiday fetch error:", holidayError.message);
+}
+
+const holidays = holidaysData || [];
+
   console.log("RAW content_type:", content_type);
 
 const type = content_type
@@ -155,7 +185,10 @@ console.log("PROCESSED type:", type);
   const assignDate = new Date(publishDate)
   assignDate.setDate(assignDate.getDate() - designBuffer)
 
-  const formattedAssignDate = assignDate.toISOString().split("T")[0]
+  const rawAssignDate = assignDate.toISOString().split("T")[0];
+
+// 🔥 ADJUST TO PREVIOUS WORKING DAY
+const formattedAssignDate = getPreviousWorkingDay(rawAssignDate, holidays);
 
   // find client configuration
   const client = clients.find(
@@ -222,12 +255,7 @@ if (eligible.length === 0) {
     }
 
     // 🔥 ONLY NOW pick designer
-    const designer = await pickDesigner(eligible)
-
-    if (!designer) {
-      console.log("No designer available")
-      continue
-    }
+    
 
     // ===== TASK CODE GENERATION =====
     const datePart = publish_date.slice(5).replace("-", ""); // MMDD
@@ -245,9 +273,9 @@ if (eligible.length === 0) {
       task_category: "design",
       publish_date,
       assign_date: formattedAssignDate,
-      team_member_id: designer.id,
+      team_member_id: null,
       strategist_id: strategistMember?.id || null, 
-      status: "ASSIGNED",
+      status: "PENDING",
       priority: "normal",
       is_manual: false,
       plan_filename: planFilename,
@@ -256,5 +284,102 @@ if (eligible.length === 0) {
 
     await createTask(task)
   }
+}
 
- }
+  export async function runDailyAssignment() {
+
+  const today = new Date().toISOString().split("T")[0];
+
+  console.log("Running assignment for:", today);
+
+  // 🔥 get pending tasks for today
+  const { data: tasks, error: taskError } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("status", "PENDING")
+    .eq("assign_date", today);
+
+  if (taskError) {
+    console.error("Task fetch error:", taskError.message);
+    return;
+  }
+
+  if (!tasks || tasks.length === 0) {
+    console.log("No tasks to assign today");
+    return;
+  }
+
+  // 🔥 get clients + team
+  const clients = await getClients();
+  const teamMembers = await getTeamMembers();
+
+  for (const task of tasks) {
+
+    const type = task.content_type;
+
+    const client = clients.find(c =>
+      task.client_name.toLowerCase().includes(c.client_name.toLowerCase())
+    );
+
+    if (!client) continue;
+
+    let rule = null;
+
+    if (type === "reel") rule = client.reel_designers;
+    if (type === "post") rule = client.post_designers;
+    if (type === "carousel") rule = client.carousel_designers;
+    if (type === "bday") rule = client.bday_designers;
+
+    // 🔥 normal eligible (skill match)
+    let eligible = getEligibleDesigners(rule, type, teamMembers);
+
+    // 🔥 fallback if empty
+    if (eligible.length === 0) {
+      eligible = teamMembers.filter(m =>
+        m.role?.toLowerCase() === "designer" &&
+        m.active && !m.is_blocked
+      );
+    }
+
+    if (eligible.length === 0) {
+      console.log("No designers available at all");
+      continue;
+    }
+
+    // 🔥 pick lowest DAILY load
+    let chosen = null;
+    let minLoad = Infinity;
+
+    for (const designer of eligible) {
+
+      const { count } = await supabase
+        .from("tasks")
+        .select("*", { count: "exact", head: true })
+        .eq("team_member_id", designer.id)
+        .eq("assign_date", today);
+
+      const load = count || 0;
+
+      if (load < minLoad) {
+        minLoad = load;
+        chosen = designer;
+      }
+    }
+
+    if (!chosen) continue;
+
+    // 🔥 assign
+    await supabase
+      .from("tasks")
+      .update({
+        team_member_id: chosen.id,
+        status: "ASSIGNED"
+      })
+      .eq("id", task.id);
+
+    console.log(`Assigned ${task.task_code} → ${chosen.name}`);
+  }
+}
+
+
+ 

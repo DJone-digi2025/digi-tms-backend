@@ -8,7 +8,7 @@ import fs from "fs"
 import cron from "node-cron"
 import AWS from "aws-sdk"
 
-import { generateTasksFromRow, getClients, getTeamMembers } from "./services/taskGenerator.js"
+import { generateTasksFromRow, getClients, getTeamMembers, runDailyAssignment } from "./services/taskGenerator.js"
 
 import { runMarketingTaskGenerator } from "./services/marketingTaskGenerator.js";
 
@@ -1165,6 +1165,7 @@ cron.schedule("0 0 * * *", async () => {
     await updateDelayCounters();
     await evaluateDesignerBlocks();
     await runMarketingTaskGenerator();
+    await runDailyAssignment();
 
     console.log("✅ All cron jobs completed");
   } catch (err) {
