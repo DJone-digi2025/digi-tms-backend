@@ -99,6 +99,17 @@ app.get("/system-data", async (req, res) => {
   }
 })
 
+app.get("/run-assignment", async (req, res) => {
+  try {
+    await runDailyAssignment();
+    res.json({ message: "Assignment executed successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 app.get("/billing", async (req, res) => {
   try {
     // 🔥 get billing data
