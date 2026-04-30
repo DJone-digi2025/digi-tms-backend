@@ -101,14 +101,37 @@ app.get("/system-data", async (req, res) => {
 
 app.get("/run-assignment", async (req, res) => {
   try {
+    const todayStr = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata"
+    });
+
+    const istDay = new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata"
+    });
+
+    const isSunday = new Date(istDay).getDay() === 0;
+
+    const { data: holidays } = await supabase
+      .from("holidays")
+      .select("date");
+
+    const isHoliday = holidays?.some(h => h.date === todayStr);
+
+    if (isSunday || isHoliday) {
+      return res.json({
+        message: "Skipped (Sunday/Holiday)"
+      });
+    }
+
     await runDailyAssignment();
+
     res.json({ message: "Assignment executed successfully" });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
-
 
 app.get("/billing", async (req, res) => {
   try {
