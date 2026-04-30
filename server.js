@@ -1173,6 +1173,24 @@ cron.schedule("0 0 * * *", async () => {
   console.log("⏰ Running midnight jobs");
 
   try {
+    // 🔥 SKIP ON SUNDAY / HOLIDAY
+const today = new Date();
+const todayStr = today.toISOString().split("T")[0];
+
+const isSunday = today.getDay() === 0;
+
+// fetch holidays
+const { data: holidays } = await supabase
+  .from("holidays")
+  .select("date");
+
+const isHoliday = holidays?.some(h => h.date === todayStr);
+
+if (isSunday || isHoliday) {
+  console.log("⛔ Skipping all jobs (Sunday/Holiday)");
+  return;
+}
+
     await updateDelayCounters();
     await evaluateDesignerBlocks();
     await runMarketingTaskGenerator();
