@@ -478,15 +478,19 @@ const { data: clientData } = await supabase
   .maybeSingle(); // 🔥 IMPORTANT (no error if not found)
 
 if (clientData?.strategist) {
-  const { data } = await supabase
-    .from("team_members")
-    .select("id")
-    .eq("name", clientData.strategist)
-    .single();
+const { data, error } = await supabase
+  .from("team_members")
+  .select("id")
+  .eq("name", clientData.strategist)
+  .limit(1);
 
-  strategistMember = data;
+if (error) {
+  console.error("Strategist fetch error:", error.message);
 }
 
+strategistMember = data?.[0] || null;
+
+}
 
 
     // ✅ 🔥 CORE FIX — ROLE BASED ASSIGNMENT
