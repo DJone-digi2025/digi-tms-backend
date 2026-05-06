@@ -471,25 +471,32 @@ app.post("/create-manual-task", async (req, res) => {
     // 🔥 get strategist from client (for designer tasks)
 let strategistMember = null;
 
+// 🔥 1. Try from client table
 const { data: clientData } = await supabase
   .from("clients")
   .select("strategist")
   .eq("client_name", client_name)
-  .maybeSingle(); // 🔥 IMPORTANT (no error if not found)
+  .maybeSingle();
 
 if (clientData?.strategist) {
-const { data, error } = await supabase
-  .from("team_members")
-  .select("id")
-  .eq("name", clientData.strategist)
-  .limit(1);
+  const { data } = await supabase
+    .from("team_members")
+    .select("id")
+    .eq("name", clientData.strategist)
+    .limit(1);
 
-if (error) {
-  console.error("Strategist fetch error:", error.message);
+  strategistMember = data?.[0] || null;
 }
 
-strategistMember = data?.[0] || null;
+// 🔥 2. FALLBACK → default strategist (Priya)
+if (!strategistMember) {
+  const { data } = await supabase
+    .from("team_members")
+    .select("id")
+    .eq("name", "Priya Dharshini M")
+    .limit(1);
 
+  strategistMember = data?.[0] || null;
 }
 
 
