@@ -1391,13 +1391,17 @@ app.post("/approve-task", async (req, res) => {
     let updateData = {};
 
     // ✅ CASE 1: Designer completed → move to strategist
-    if (task.stage === "design") {
-      updateData = {
-        status: "COMPLETED",
-        ready_for_publish: true,
-        stage: "publish"
-      };
-    }
+if (task.stage === "design") {
+  updateData = {
+    status: "COMPLETED",
+    ready_for_publish: true,
+    stage: "publish",
+
+    // 🔥 IMPORTANT FIX
+    team_member_id: null,              // remove designer
+    // strategist_id already exists → keep it
+  };
+}
 
     // ✅ CASE 2: Strategist published → final completion
     else if (task.stage === "publish") {
