@@ -58,7 +58,9 @@ export async function getTeamMembers() {
 export function getEligibleDesigners(rule, contentType, teamMembers) {
 
   // remove blocked designers
-  const todayStr = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA", {
+  timeZone: "Asia/Kolkata"
+});
 
 const activeMembers = teamMembers.filter(m => {
   const isOnLeave =
@@ -288,7 +290,9 @@ if (eligible.length === 0) {
 
   export async function runDailyAssignment() {
 
-  const today = new Date().toISOString().split("T")[0];
+ const today = new Date().toLocaleDateString("en-CA", {
+  timeZone: "Asia/Kolkata"
+});
 
   console.log("Running assignment for:", today);
 
