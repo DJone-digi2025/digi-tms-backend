@@ -301,7 +301,7 @@ if (eligible.length === 0) {
     .from("tasks")
     .select("*")
     .eq("status", "PENDING")
-    .eq("assign_date", today);
+    .lte("assign_date", today);
 
   if (taskError) {
     console.error("Task fetch error:", taskError.message);
