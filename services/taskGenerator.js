@@ -58,7 +58,7 @@ export async function getTeamMembers() {
 export function getEligibleDesigners(rule, contentType, teamMembers) {
 
   // remove blocked designers
-  const today = new Date().toLocaleDateString("en-CA", {
+const todayStr = new Date().toLocaleDateString("en-CA", {
   timeZone: "Asia/Kolkata"
 });
 
@@ -69,7 +69,7 @@ const activeMembers = teamMembers.filter(m => {
     todayStr >= m.leave_start_date &&
     todayStr <= m.leave_end_date;
 
-  return !m.is_blocked && !isOnLeave;
+  return m.active && !m.is_blocked && !isOnLeave;
 });
 
   if (!rule) return []
@@ -301,7 +301,7 @@ if (eligible.length === 0) {
     .from("tasks")
     .select("*")
     .eq("status", "PENDING")
-    .eq("assign_date", today);
+    .lte("assign_date", today);
 
   if (taskError) {
     console.error("Task fetch error:", taskError.message);
@@ -356,11 +356,11 @@ if (eligible.length === 0) {
 
     for (const designer of eligible) {
 
-      const { count } = await supabase
-        .from("tasks")
-        .select("*", { count: "exact", head: true })
-        .eq("team_member_id", designer.id)
-        .eq("assign_date", today);
+const { count } = await supabase
+  .from("tasks")
+  .select("*", { count: "exact", head: true })
+  .eq("team_member_id", designer.id)
+  .neq("status", "COMPLETED");
 
       const load = count || 0;
 
