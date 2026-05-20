@@ -1797,26 +1797,52 @@ app.get("/tasks/manager/history", async (req, res) => {
   }
 });
 
+
 app.get("/tasks/designer/all", async (req, res) => {
   const { user_id } = req.query;
 
   try {
-    const { data, error } = await supabase
+
+    // ✅ ACTIVE TASKS
+    const { data: activeTasks, error: activeError } = await supabase
       .from("tasks")
       .select(`
         *,
         team_members!tasks_team_member_id_fkey ( name )
       `)
-      .eq("team_member_id", user_id); // only designer tasks
+      .eq("team_member_id", user_id);
 
-    if (error) throw error;
+    if (activeError) throw activeError;
 
-    res.json(data);
+    // ✅ COMPLETED TASKS
+    const { data: completedTasks, error: completedError } = await supabase
+      .from("tasks")
+      .select(`
+        *,
+        team_members!tasks_completed_by_designer_id_fkey ( name )
+      `)
+      .eq("completed_by_designer_id", user_id)
+      .eq("status", "COMPLETED");
+
+    if (completedError) throw completedError;
+
+    // ✅ MERGE + REMOVE DUPLICATES
+    const merged = [
+      ...(activeTasks || []),
+      ...(completedTasks || [])
+    ];
+
+    const uniqueTasks = Array.from(
+      new Map(merged.map(task => [task.id, task])).values()
+    );
+
+    res.json(uniqueTasks);
 
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 app.get("/tasks/all", async (req, res) => {
   try {
