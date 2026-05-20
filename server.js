@@ -2031,7 +2031,89 @@ app.get("/plans/tracker", async (req, res) => {
 
     console.log("TRACKER TASKS:", tasks.length);
 
-    res.json(tasks);
+    const grouped = {};
+
+    tasks.forEach(task => {
+
+  if (!grouped[task.client_name]) {
+
+    grouped[task.client_name] = {
+      client_name: task.client_name,
+      csv: {},
+manual: {
+  total: 0,
+  completed: 0,
+  active: 0,
+  remaining: 0,
+  tasks: []
+}
+    };
+
+  }
+const isCompleted =
+  task.status === "COMPLETED" &&
+  task.stage === "publish" &&
+  task.ready_for_publish === false;
+
+const isActive =
+  ["ASSIGNED", "SUBMITTED", "REWORK"].includes(task.status);
+
+  if (task.is_manual === true) {
+
+  grouped[task.client_name].manual.total++;
+
+  if (isCompleted) {
+    grouped[task.client_name].manual.completed++;
+  }
+
+  else if (isActive) {
+    grouped[task.client_name].manual.active++;
+  }
+
+  grouped[task.client_name].manual.tasks.push({
+    id: task.id,
+    content_type: task.content_type,
+    status: task.status,
+    assigned_to: task.team_members?.name || "-"
+  });
+return;
+}
+
+const type = task.content_type?.toLowerCase();
+
+if (!grouped[task.client_name].csv[type]) {
+
+  grouped[task.client_name].csv[type] = {
+    total: 0,
+    completed: 0,
+    active: 0,
+    remaining: 0,
+    tasks: []
+  };
+
+}
+
+const section = grouped[task.client_name].csv[type];
+
+section.total++;
+
+if (isCompleted) {
+  section.completed++;
+}
+
+else if (isActive) {
+  section.active++;
+}
+
+section.tasks.push({
+  task_code: task.task_code,
+  status: task.status,
+  assigned_to: task.team_members?.name || "-"
+});
+
+});
+
+res.json(grouped);
 
   } catch (err) {
 
