@@ -2075,8 +2075,15 @@ app.get("/recover-completed-designers", async (req, res) => {
       if (!chosenDesigner) continue;
 
       // 🔥 update historical ownership
+await supabase
+  .from("tasks")
+  .update({
+    completed_by_designer_id: chosenDesigner.id
+  })
+  .eq("id", task.id);
+
 console.log(
-  `RECOVERY TEST → ${task.task_code} → ${chosenDesigner.name}`
+  `Recovered ${task.task_code} → ${chosenDesigner.name}`
 );
 
       console.log(
