@@ -1844,15 +1844,22 @@ app.get("/tasks/designer/all", async (req, res) => {
 });
 
 
-
 app.get("/tasks/all", async (req, res) => {
   try {
+
     const { data, error } = await supabase
       .from("tasks")
       .select(`
         *,
-        team_members!tasks_team_member_id_fkey ( name ),
-        strategist:team_members!tasks_strategist_id_fkey ( name )
+        team_members!tasks_team_member_id_fkey (
+          name
+        ),
+        strategist:team_members!tasks_strategist_id_fkey (
+          name
+        ),
+        completed_designer:team_members!tasks_completed_by_designer_id_fkey (
+          name
+        )
       `);
 
     if (error) throw error;
@@ -1860,9 +1867,14 @@ app.get("/tasks/all", async (req, res) => {
     res.json(data);
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("TASKS ALL ERROR:", err);
+
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
+
 
 app.patch("/remove-plan/:id", async (req, res) => {
   try {
