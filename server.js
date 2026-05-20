@@ -1993,6 +1993,113 @@ app.get("/activity-logs", async (req, res) => {
 
 const PORT = process.env.PORT || 5000
 
+
+app.get("/recover-completed-designers", async (req, res) => {
+  try {
+
+    // 🔥 get all completed tasks missing designer history
+    const { data: tasks, error: taskError } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("status", "COMPLETED")
+      .is("completed_by_designer_id", null);
+
+    if (taskError) throw taskError;
+
+    // 🔥 get clients
+    const { data: clients } = await supabase
+      .from("clients")
+      .select("*");
+
+    // 🔥 get designers only
+    const { data: designers } = await supabase
+      .from("team_members")
+      .select("*")
+      .eq("role", "designer");
+
+    let autoIndex = {};
+
+    for (const task of tasks) {
+
+      const type = (task.content_type || "").toLowerCase();
+
+      const client = clients.find(c =>
+        task.client_name?.toLowerCase().includes(
+          c.client_name?.toLowerCase()
+        )
+      );
+
+      if (!client) continue;
+
+      let rule = null;
+
+      if (type === "reel") rule = client.reel_designers;
+      if (type === "post") rule = client.post_designers;
+      if (type === "carousel") rule = client.carousel_designers;
+      if (type === "bday") rule = client.bday_designers;
+
+      let chosenDesigner = null;
+
+      // ✅ FIXED DESIGNER
+      if (rule && rule.toLowerCase() !== "auto") {
+
+        const names = rule
+          .split(",")
+          .map(n => n.trim().toLowerCase());
+
+        chosenDesigner = designers.find(d =>
+          names.includes(d.name?.trim().toLowerCase())
+        );
+      }
+
+      // ✅ AUTO DESIGNER
+      else {
+
+        const eligible = designers.filter(d =>
+          d.skill?.toLowerCase().includes(type)
+        );
+
+        if (eligible.length > 0) {
+
+          if (!autoIndex[type]) {
+            autoIndex[type] = 0;
+          }
+
+          chosenDesigner =
+            eligible[autoIndex[type] % eligible.length];
+
+          autoIndex[type]++;
+        }
+      }
+
+      if (!chosenDesigner) continue;
+
+      // 🔥 update historical ownership
+      await supabase
+        .from("tasks")
+        .update({
+          completed_by_designer_id: chosenDesigner.id
+        })
+        .eq("id", task.id);
+
+      console.log(
+        `Recovered ${task.task_code} → ${chosenDesigner.name}`
+      );
+    }
+
+    res.json({
+      message: "Recovery completed"
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
