@@ -2016,6 +2016,35 @@ app.get("/activity-logs", async (req, res) => {
   }
 });
 
+app.get("/plans/tracker", async (req, res) => {
+
+  try {
+
+    const { data: tasks, error } = await supabase
+      .from("tasks")
+      .select(`
+        *,
+        team_members!tasks_team_member_id_fkey(name)
+      `);
+
+    if (error) throw error;
+
+    console.log("TRACKER TASKS:", tasks.length);
+
+    res.json(tasks);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
+
 const PORT = process.env.PORT || 5000
 
 app.listen(PORT, () => {
