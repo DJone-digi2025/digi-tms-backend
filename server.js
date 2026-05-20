@@ -2113,6 +2113,24 @@ section.tasks.push({
 
 });
 
+Object.values(grouped).forEach(client => {
+
+  Object.values(client.csv).forEach(section => {
+
+    section.remaining =
+      section.total -
+      section.completed -
+      section.active;
+
+  });
+
+  client.manual.remaining =
+    client.manual.total -
+    client.manual.completed -
+    client.manual.active;
+
+});
+
 res.json(grouped);
 
   } catch (err) {
