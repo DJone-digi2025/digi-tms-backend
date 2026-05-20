@@ -1408,9 +1408,11 @@ if (task.stage === "design") {
     ready_for_publish: true,
     stage: "publish",
 
-    // 🔥 IMPORTANT FIX
-    team_member_id: null,              // remove designer
-    // strategist_id already exists → keep it
+    // ✅ preserve historical designer
+    completed_by_designer_id: task.team_member_id,
+
+    // ✅ remove active ownership
+    team_member_id: null,
   };
 }
 
@@ -1759,11 +1761,11 @@ app.get("/tasks/designer/history", async (req, res) => {
         .in("status", ["COMPLETED"]);
 
     } else {
-      // designer history = completed
-      query = query
-        .eq("team_member_id", user_id)
-        .eq("status", "COMPLETED");
-    }
+  // designer history = completed design tasks
+  query = query
+    .eq("completed_by_designer_id", user_id)
+    .eq("status", "COMPLETED");
+}
 
     const { data, error } = await query;
 
