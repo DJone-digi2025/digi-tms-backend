@@ -2035,6 +2035,10 @@ app.get("/plans/tracker", async (req, res) => {
 
     tasks.forEach(task => {
 
+if (task.status === "CANCELLED") {
+  return;
+}
+
   if (!grouped[task.client_name]) {
 
     grouped[task.client_name] = {
