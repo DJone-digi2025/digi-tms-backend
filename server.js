@@ -1989,27 +1989,181 @@ app.post("/plans/generate-preview", async (req, res) => {
     const {
       client_name,
       month,
-      reel,
-      post,
-      carousel,
-      bday
+      reel = 0,
+      post = 0,
+      carousel = 0,
+      bday = 0
     } = req.body;
 
     console.log("PREVIEW REQUEST:", req.body);
 
+    const { data: holidaysData, error: holidayError } =
+      await supabase
+        .from("holidays")
+        .select("date");
+
+    if (holidayError) {
+      throw new Error(holidayError.message);
+    }
+
+    const holidays =
+      (holidaysData || []).map(h => h.date);
+
+    const [year, monthNumber] =
+      month.split("-").map(Number);
+
+    // ====================================================
+    // BUILD WORKING DAYS (1st → 25th)
+    // ====================================================
+
+    const workingDays = [];
+
+    for (let day = 1; day <= 25; day++) {
+
+      const date = new Date(
+        year,
+        monthNumber - 1,
+        day
+      );
+
+      const dateStr =
+        date.toISOString().split("T")[0];
+
+      const isSunday =
+        date.getDay() === 0;
+
+      const isHoliday =
+        holidays.includes(dateStr);
+
+      if (!isSunday && !isHoliday) {
+        workingDays.push(dateStr);
+      }
+    }
+
+    // ====================================================
+    // BUILD CONTENT POOL
+    // ====================================================
+
+    const buckets = {
+      reel: Number(reel),
+      post: Number(post),
+      carousel: Number(carousel),
+      bday: Number(bday)
+    };
+
+    const contentPool = [];
+
+    let reelIndex = 1;
+    let postIndex = 1;
+    let carouselIndex = 1;
+    let bdayIndex = 1;
+
+    while (
+      buckets.reel > 0 ||
+      buckets.post > 0 ||
+      buckets.carousel > 0 ||
+      buckets.bday > 0
+    ) {
+
+      if (buckets.reel > 0) {
+        contentPool.push({
+          type: "reel",
+          label: `Reel ${reelIndex++}`
+        });
+        buckets.reel--;
+      }
+
+      if (buckets.post > 0) {
+        contentPool.push({
+          type: "post",
+          label: `Post ${postIndex++}`
+        });
+        buckets.post--;
+      }
+
+      if (buckets.carousel > 0) {
+        contentPool.push({
+          type: "carousel",
+          label: `Carousel ${carouselIndex++}`
+        });
+        buckets.carousel--;
+      }
+
+      if (buckets.bday > 0) {
+        contentPool.push({
+          type: "bday",
+          label: `Birthday ${bdayIndex++}`
+        });
+        buckets.bday--;
+      }
+    }
+
+    const totalContents =
+      contentPool.length;
+
+    if (totalContents === 0) {
+      return res.json({
+        success: true,
+        rows: []
+      });
+    }
+
+    // ====================================================
+    // DISTRIBUTE EVENLY
+    // ====================================================
+
+    const previewRows = [];
+
+    for (let i = 0; i < totalContents; i++) {
+
+      const dayIndex =
+        Math.round(
+          (i * (workingDays.length - 1))
+          / Math.max(totalContents - 1, 1)
+        );
+
+      const publishDate =
+        workingDays[dayIndex];
+
+      const item =
+        contentPool[i];
+
+      const designBuffer =
+        bufferRules[item.type]?.design || 3;
+
+      let assignDate =
+        new Date(publishDate);
+
+      assignDate.setDate(
+        assignDate.getDate() - designBuffer
+      );
+
+      const rawAssignDate =
+        assignDate.toISOString().split("T")[0];
+
+      const finalAssignDate =
+        getPreviousWorkingDay(
+          rawAssignDate,
+          holidaysData || []
+        );
+
+      previewRows.push({
+        client_name,
+        content_type: item.type,
+        label: item.label,
+        publish_date: publishDate,
+        assign_date: finalAssignDate
+      });
+    }
+
     res.json({
       success: true,
-      data: {
-        client_name,
-        month,
-        reel,
-        post,
-        carousel,
-        bday
-      }
+      rows: previewRows
     });
 
   } catch (err) {
+
+    console.error(err);
 
     res.status(500).json({
       error: err.message
