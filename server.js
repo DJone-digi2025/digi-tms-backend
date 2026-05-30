@@ -1981,6 +1981,44 @@ app.post("/publish-task", async (req, res) => {
   }
 });
 
+
+app.post("/plans/generate-preview", async (req, res) => {
+
+  try {
+
+    const {
+      client_name,
+      month,
+      reel,
+      post,
+      carousel,
+      bday
+    } = req.body;
+
+    console.log("PREVIEW REQUEST:", req.body);
+
+    res.json({
+      success: true,
+      data: {
+        client_name,
+        month,
+        reel,
+        post,
+        carousel,
+        bday
+      }
+    });
+
+  } catch (err) {
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
+
 app.get("/activity-logs", async (req, res) => {
   try {
     const { user_id, dev_key } = req.query;
