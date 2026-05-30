@@ -7,7 +7,7 @@ export const bufferRules = {
   bday: { design: 2, publish: 1}
 }
 
-function getPreviousWorkingDay(dateStr, holidays) {
+export function getPreviousWorkingDay(dateStr, holidays) {
   let d = new Date(dateStr);
 
   while (true) {
