@@ -8,11 +8,16 @@ import fs from "fs"
 import cron from "node-cron"
 import AWS from "aws-sdk"
 
-import { generateTasksFromRow, getClients, getTeamMembers, runDailyAssignment } from "./services/taskGenerator.js"
+import {
+  generateTasksFromRow,
+  getClients,
+  getTeamMembers,
+  runDailyAssignment,
+  bufferRules
+} from "./services/taskGenerator.js";
 
 import { runMarketingTaskGenerator } from "./services/marketingTaskGenerator.js";
 
-import { bufferRules } from "./services/taskGeneration.js";
 
 dotenv.config()
 
