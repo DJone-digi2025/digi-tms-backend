@@ -2187,6 +2187,61 @@ console.log({
 
 });
 
+app.post("/plans/recalculate-assign-date", async (req, res) => {
+
+  try {
+
+    const {
+      publish_date,
+      content_type
+    } = req.body;
+
+    if (!publish_date || !content_type) {
+      return res.json({
+        assign_date: ""
+      });
+    }
+
+    const { data: holidaysData } =
+      await supabase
+        .from("holidays")
+        .select("date");
+
+    const designBuffer =
+      bufferRules[content_type]?.design || 3;
+
+    let assignDate =
+      new Date(publish_date);
+
+    assignDate.setDate(
+      assignDate.getDate() - designBuffer
+    );
+
+    const rawAssignDate =
+      assignDate.toISOString().split("T")[0];
+
+    const finalAssignDate =
+      getPreviousWorkingDay(
+        rawAssignDate,
+        holidaysData || []
+      );
+
+    res.json({
+      assign_date: finalAssignDate
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
+
 app.get("/activity-logs", async (req, res) => {
   try {
     const { user_id, dev_key } = req.query;
