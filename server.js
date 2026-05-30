@@ -2154,6 +2154,13 @@ app.post("/plans/generate-preview", async (req, res) => {
           holidaysData || []
         );
 
+console.log({
+  content: item.label,
+  publishDate,
+  rawAssignDate,
+  finalAssignDate
+});
+
       previewRows.push({
         client_name,
         content_type: item.type,
