@@ -12,6 +12,7 @@ import { generateTasksFromRow, getClients, getTeamMembers, runDailyAssignment } 
 
 import { runMarketingTaskGenerator } from "./services/marketingTaskGenerator.js";
 
+import { bufferRules } from "./services/taskGeneration.js";
 
 dotenv.config()
 

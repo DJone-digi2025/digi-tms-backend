@@ -1,6 +1,6 @@
 import supabase from "../db/supabaseClient.js"
 
-const bufferRules = {
+export const bufferRules = {
   reel: { design: 3, publish: 1 },
   post: { design: 3, publish: 1 },
   carousel: { design: 3, publish: 1 },
