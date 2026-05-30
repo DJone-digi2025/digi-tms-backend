@@ -2242,6 +2242,53 @@ app.post("/plans/recalculate-assign-date", async (req, res) => {
 
 });
 
+app.post("/plans/save-preview", async (req, res) => {
+
+  try {
+
+    const { rows } = req.body;
+
+    if (!rows || rows.length === 0) {
+      return res.status(400).json({
+        error: "No rows provided"
+      });
+    }
+
+    const clients = await getClients();
+    const teamMembers = await getTeamMembers();
+
+    for (const row of rows) {
+
+      await generateTasksFromRow(
+        {
+          client_name: row.client_name,
+          publish_date: row.publish_date,
+          content_type: row.content_type,
+          count: 1
+        },
+        clients,
+        teamMembers
+      );
+
+    }
+
+    res.json({
+      success: true,
+      message: "Tasks created"
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+
+});
+
 app.get("/activity-logs", async (req, res) => {
   try {
     const { user_id, dev_key } = req.query;
